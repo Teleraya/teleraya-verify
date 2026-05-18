@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Verifikasi Sertifikat Teleraya</title>
+
   <style>
     body {
       font-family: Arial;
@@ -15,7 +16,7 @@
       background: #111827;
       padding: 30px;
       border-radius: 12px;
-      max-width: 500px;
+      max-width: 550px;
       margin: auto;
       box-shadow: 0 0 20px rgba(255,215,0,0.2);
     }
@@ -49,70 +50,169 @@
     .invalid {
       color: #ef4444;
     }
+
+    #hasil {
+      margin-top: 20px;
+      line-height: 1.8;
+    }
   </style>
 </head>
+
 <body>
 
 <div class="box">
+
   <h2>🔐 Verifikasi Sertifikat</h2>
   <p>Kerajaan Teleraya</p>
 
-  <input type="text" id="idInput" placeholder="Masukkan ID Sertifikat">
-  <br>
-  <button onclick="cek()">Verifikasi</button>
+  <input
+    type="text"
+    id="idInput"
+    placeholder="Masukkan ID Sertifikat"
+  >
 
-  <h3 id="hasil"></h3>
+  <br>
+
+  <button onclick="cek()">
+    Verifikasi
+  </button>
+
+  <div id="hasil"></div>
+
 </div>
 
 <script>
+
+// ===============================
+// DAFTAR SEMUA TAB GOOGLE SHEETS
+// ===============================
+
+const sheetURLs = [
+
+  // TAB TOP TYPING
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRQyritzRlF6_UArDQXg-1DlYpBu2D_Py0LFfgw7d4SNG7VlX2ZSA9ry8w1NXw5tAy7wyWw3lPVjDVx/pub?gid=0&single=true&output=csv",
+
+  // TAB LOMBA
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRQyritzRlF6_UArDQXg-1DlYpBu2D_Py0LFfgw7d4SNG7VlX2ZSA9ry8w1NXw5tAy7wyWw3lPVjDVx/pub?gid=1204144660&single=true&output=csv"
+
+];
+
+// ===============================
+// FUNGSI VERIFIKASI
+// ===============================
+
 async function cek() {
-  let id = document.getElementById("idInput").value.trim();
 
-  let res = await fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vRQyritzRlF6_UArDQXg-1DlYpBu2D_Py0LFfgw7d4SNG7VlX2ZSA9ry8w1NXw5tAy7wyWw3lPVjDVx/pub?gid=0&single=true&output=csv");
-  let text = await res.text();
-
-  let rows = text.split("\n");
+  let id = document
+    .getElementById("idInput")
+    .value
+    .trim();
 
   let found = false;
 
-  rows.forEach((row, i) => {
-    if (i === 0) return; // skip header
+  // LOOP SEMUA TAB
+  for (let s = 0; s < sheetURLs.length; s++) {
 
-    let col = row.split(",");
+    try {
 
-    if (col[0] === id) {
-      let totalChat = Number(col[5]).toLocaleString("id-ID");
-      let reward = Number(col[7]).toLocaleString("id-ID");
+      let res = await fetch(sheetURLs[s]);
 
-      document.getElementById("hasil").innerHTML = `
-        <span class="valid">✅ VALID</span><br><br>
-        <b>Nama:</b> ${col[2]}<br>
-        <b>User ID:</b> ${col[3]}<br>
-        <b>Kategori:</b> ${col[4]}<br>
-        <b>Total Chat:</b> ${totalChat}<br>
-        <b>Periode:</b> ${col[6]}<br>
-        <b>Reward:</b> Rp${reward}<br>
-        <b>Tanggal:</b> ${col[8]}<br>
-        <b>No Sertifikat:</b> ${col[1]}
-      `;
-      found = true;
+      let text = await res.text();
+
+      let rows = text.split("\n");
+
+      // HEADER
+      let headers = rows[0].split(",");
+
+      // LOOP DATA
+      for (let i = 1; i < rows.length; i++) {
+
+        let col = rows[i].split(",");
+
+        // COCOKKAN ID
+        if (col[0].trim() === id) {
+
+          let html = `
+            <span class="valid">
+              ✅ VALID
+            </span>
+            <br><br>
+          `;
+
+          // TAMPILKAN SEMUA KOLOM OTOMATIS
+          for (let j = 0; j < headers.length; j++) {
+
+            if (!col[j]) continue;
+
+            let value = col[j];
+
+            // FORMAT REWARD JADI RUPIAH
+            if (
+              headers[j]
+              .toLowerCase()
+              .includes("reward")
+            ) {
+
+              value =
+                "Rp" +
+                Number(value)
+                .toLocaleString("id-ID");
+            }
+
+            html += `
+              <b>${headers[j]}:</b>
+              ${value}
+              <br>
+            `;
+          }
+
+          document.getElementById("hasil").innerHTML = html;
+
+          found = true;
+
+          break;
+        }
+      }
+
+      if (found) break;
+
+    } catch (err) {
+
+      console.log(err);
+
     }
-  });
+  }
 
+  // JIKA TIDAK DITEMUKAN
   if (!found) {
-    document.getElementById("hasil").innerHTML =
-      `<span class="invalid">❌ TIDAK TERDAFTAR</span>`;
+
+    document.getElementById("hasil").innerHTML = `
+      <span class="invalid">
+        ❌ TIDAK TERDAFTAR
+      </span>
+    `;
   }
 }
 
+// ===============================
 // AUTO DETECT DARI QR
-const params = new URLSearchParams(window.location.search);
-const idURL = params.get("id");
+// ===============================
+
+const params =
+  new URLSearchParams(window.location.search);
+
+const idURL =
+  params.get("id");
 
 if (idURL) {
-  document.getElementById("idInput").value = idURL;
+
+  document
+    .getElementById("idInput")
+    .value = idURL;
+
   cek();
 }
+
 </script>
 
 </body>
