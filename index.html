@@ -1,71 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Verifikasi Sertifikat Teleraya</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 50px;
+      background: #0f172a;
+      color: white;
+    }
+
+    .box {
+      background: #111827;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 500px;
+      margin: auto;
+      box-shadow: 0 0 20px rgba(255,215,0,0.2);
+    }
+
+    input {
+      padding: 10px;
+      width: 250px;
+      border-radius: 6px;
+      border: none;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 6px;
+      background: gold;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    h2 {
+      color: gold;
+    }
+
+    .valid {
+      color: #22c55e;
+    }
+
+    .invalid {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>🔐 Verifikasi Sertifikat</h2>
+  <p>Kerajaan Teleraya</p>
+
+  <input type="text" id="idInput" placeholder="Masukkan ID Sertifikat">
+  <br>
+  <button onclick="cek()">Verifikasi</button>
+
+  <h3 id="hasil"></h3>
+</div>
+
 <script>
-
-const spreadsheetID = "2PACX-1vRQyritzRlF6_UArDQXg-1DlYpBu2D_Py0LFfgw7d4SNG7VlX2ZSA9ry8w1NXw5tAy7wyWw3lPVjDVx";
-
-// DAFTAR GID TAB
-const gids = [
-  "0",
-  "123456789",
-  "987654321"
-];
-
-// AUTO BUAT LINK CSV
-const sheetURLs = gids.map(
-  gid =>
-    `https://docs.google.com/spreadsheets/d/e/${spreadsheetID}/pub?gid=${gid}&single=true&output=csv`
-);
-
 async function cek() {
-
   let id = document.getElementById("idInput").value.trim();
+
+  let res = await fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vRQyritzRlF6_UArDQXg-1DlYpBu2D_Py0LFfgw7d4SNG7VlX2ZSA9ry8w1NXw5tAy7wyWw3lPVjDVx/pub?gid=0&single=true&output=csv");
+  let text = await res.text();
+
+  let rows = text.split("\n");
 
   let found = false;
 
-  for (const url of sheetURLs) {
+  rows.forEach((row, i) => {
+    if (i === 0) return; // skip header
 
-    let res = await fetch(url);
-    let text = await res.text();
+    let col = row.split(",");
 
-    let rows = text.split("\n");
+    if (col[0] === id) {
+      let totalChat = Number(col[5]).toLocaleString("id-ID");
+      let reward = Number(col[7]).toLocaleString("id-ID");
 
-    for (let i = 1; i < rows.length; i++) {
-
-      let col = rows[i].split(",");
-
-      if (col[0] === id) {
-
-        let html = `
-          <span class="valid">✅ VALID</span><br><br>
-        `;
-
-        // TAMPILKAN SEMUA KOLOM OTOMATIS
-        const headers = rows[0].split(",");
-
-        headers.forEach((header, index) => {
-
-          let value = col[index];
-
-          if (!value) return;
-
-          // FORMAT RUPIAH
-          if (
-            header.toLowerCase().includes("reward")
-          ) {
-            value = "Rp" + Number(value).toLocaleString("id-ID");
-          }
-
-          html += `<b>${header}:</b> ${value}<br>`;
-        });
-
-        document.getElementById("hasil").innerHTML = html;
-
-        found = true;
-        break;
-      }
+      document.getElementById("hasil").innerHTML = `
+        <span class="valid">✅ VALID</span><br><br>
+        <b>Nama:</b> ${col[2]}<br>
+        <b>User ID:</b> ${col[3]}<br>
+        <b>Kategori:</b> ${col[4]}<br>
+        <b>Total Chat:</b> ${totalChat}<br>
+        <b>Periode:</b> ${col[6]}<br>
+        <b>Reward:</b> Rp${reward}<br>
+        <b>Tanggal:</b> ${col[8]}<br>
+        <b>No Sertifikat:</b> ${col[1]}
+      `;
+      found = true;
     }
-
-    if (found) break;
-  }
+  });
 
   if (!found) {
     document.getElementById("hasil").innerHTML =
@@ -74,7 +106,6 @@ async function cek() {
 }
 
 // AUTO DETECT DARI QR
-
 const params = new URLSearchParams(window.location.search);
 const idURL = params.get("id");
 
@@ -82,5 +113,7 @@ if (idURL) {
   document.getElementById("idInput").value = idURL;
   cek();
 }
-
 </script>
+
+</body>
+</html>
