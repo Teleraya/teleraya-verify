@@ -1,0 +1,23 @@
+{
+  "name": "Teleraya Certificate Verify private on-demand preview",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "forwardPorts": [
+    3000
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Teleraya Certificate Verify preview",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "echo 'Static site; no dependencies to install.'",
+  "postStartCommand": "bash -lc 'nohup bash -lc \"npx --yes http-server . -a 0.0.0.0 -p 3000 -c-1\" >/tmp/teleraya-preview.log 2>&1 </dev/null &'",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}
