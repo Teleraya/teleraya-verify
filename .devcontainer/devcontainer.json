@@ -19,5 +19,8 @@
         "terminal.integrated.defaultProfile.linux": "bash"
       }
     }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {}
   }
 }
